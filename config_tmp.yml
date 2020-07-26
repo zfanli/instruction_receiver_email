@@ -1,0 +1,11 @@
+email_config:
+  protocol: IMAP
+  imap_server: imap.server
+  imap_port: 456
+  smtp_server: smtp.server
+  smtp_port: 789
+  username: name@server
+  password: <password>
+allow_list: # email addresses which allow to send instructions
+  - name@email.address
+  - other@email.address
