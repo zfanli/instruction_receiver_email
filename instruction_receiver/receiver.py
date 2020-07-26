@@ -2,9 +2,13 @@ import imaplib
 import yaml
 import email
 
+from .adapter import Adapter
+
 
 class Receiver:
     """Mail receiver and parser."""
+
+    adapter = Adapter()
 
     def __init__(self, config):
         """Initialize receiver."""
@@ -95,7 +99,9 @@ class Receiver:
                 # Process
                 self.parse(msg, charset)
                 # Mark this mail as read
-                # self.seen(i)
+                # COMMENT OUT ONLY FOR TEST!!
+                # TODO COMMENT OFF after testing
+                # self.seen(id)
         self.close()
 
     def filter(self, msg):
@@ -111,14 +117,30 @@ class Receiver:
     def parse(self, msg, charset):
         """Main processing."""
 
-        print(self.decode(msg["From"]), self.decode(msg["Subject"]))
-        # Shortest one is the one should to be parsed
-        payload = self.get_payload(msg, charset)
-        body = None
-        for item in payload:
-            if body is None or len(body) > len(item):
-                body = item
-        print(body)
+        subject = self.decode(msg["Subject"]).split()
+        print(self.decode(msg["From"]), subject)
+        status, resp = self.adapter.send_instruction(subject)
+
+        if status != "ok":
+            print(
+                "Failed to parse subject as an instruction,",
+                "trying to parse the body.",
+            )
+            # Shortest one is the one should to be parsed
+            payload = self.get_payload(msg, charset)
+            body = None
+            for item in payload:
+                if body is None or len(body) > len(item):
+                    body = item
+            body = body.split()
+            print("Body:", body)
+            status, resp = self.adapter.send_instruction(body)
+            if status != "ok":
+                print("Failed to parse body as an instruction. Mail ignored.")
+                return
+
+        # Do something with resp
+        print("Response:", resp)
 
     def seen(self, id):
         """Mark mail as read."""
@@ -131,8 +153,3 @@ class Receiver:
         self.server.close()
         self.server.logout()
 
-
-if __name__ == "__main__":
-    # Test
-    receiver = Receiver("config.yml")
-    receiver.read()
